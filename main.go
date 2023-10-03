@@ -13,10 +13,14 @@ import (
 
 func main() {
 	g := graphviz.New()
-	graph, _ := g.Graph()
+	template_graph := []byte("digraph{\noverlap_scaling=-7\n}")
 
+	graph, _ := graphviz.ParseBytes(template_graph)
 	cli, _ := client.NewClientWithOpts(client.FromEnv)
-	containers, _ := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
 
 	networks := map[string]*cgraph.Node{}
 	
@@ -24,11 +28,11 @@ func main() {
 		container_name := fmt.Sprintf("%s\n%s\n%s", container.ID[:8], container.Names[0], container.Image)
 		container_node, _ := graph.CreateNode(container_name)
 		container_node.SetShape(cgraph.CircleShape)
-		container_node.SetFixedSize(true)
-		container_node.SetWidth(2)
 		container_node.SetHeight(2)
+		container_node.SetWidth(2)
 		container_node.SetStyle(cgraph.FilledNodeStyle)
 		container_node.SetFillColor("#FAA4C3")
+		container_node.SetTooltip(container_name)
 
 		if strings.Contains(container.Names[0], "db") {
 			container_node.SetShape(cgraph.CylinderShape)
@@ -60,7 +64,15 @@ func main() {
 		}
 	}
 
-	g.SetLayout(graphviz.CIRCO)
-	g.RenderFilename(graph, graphviz.SVG, "graph.svg")
-	g.RenderFilename(graph, graphviz.PNG, "graph.png")
+	g.SetLayout(graphviz.SFDP)
+
+	err = g.RenderFilename(graph, graphviz.SVG, "graph.svg")
+	if err != nil {
+		panic(err)
+	}
+
+	err = g.RenderFilename(graph, graphviz.PNG, "graph.png")
+	if err != nil {
+		panic(err)
+	}
 }
