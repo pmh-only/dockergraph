@@ -59,6 +59,11 @@ func main() {
 				networks[network] = network_node
 			}
 
+			// ignore maxscale connection
+			if network == "maxscale" {
+				continue
+			}
+
 			edge, _ := graph.CreateEdge("", container_node, networks[network])
 			edge.SetTailLabel(networkDetail.IPAddress)
 		}
